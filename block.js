@@ -57,19 +57,6 @@ BlockElement.prototype.getParent = function(n) {
 
     return blockParent;
 }
-BlockElement.prototype.getMarkup = function() {
-    let markup;
-    for (let blockParent = this;
-            blockParent !== undefined;
-            blockParent = this.blockParent)
-    {
-        markup = blockParent.markup;
-    }
-    if (markup === undefined)
-        markup = {};
-
-    return markup;
-}
 BlockElement.prototype.mapChilds = function(array, iterator) {
     if (array && iterator)
         array.forEach(iterator.bind(this, this));
@@ -149,19 +136,6 @@ BlockElement.prototype.mutate = function(opt) {
             this.element.style[key] = opt.style[key];
         });
     }
-    if (opt.markup)
-    {
-        let markup = this.getMarkup();
-        if (markup === undefined)
-        {
-            this.markup = {};
-            markup = this.markup;
-        }
-
-        Object.keys(opt.markup).forEach((key) => {
-            markup[key] = opt.markup[key];
-        });
-    }
     return this;
 }
 BlockElement.prototype.shown = function() {
@@ -210,6 +184,11 @@ Object.defineProperty(BlockElement.prototype, "innerHTML", {
     },
     get: function () {
         return this.element.innerHTML;
+    },
+});
+Object.defineProperty(BlockElement.prototype, "classList", {
+    get: function () {
+        return this.element.classList;
     },
 });
 Object.defineProperty(BlockElement.prototype, "value", {
