@@ -62,7 +62,7 @@ BlockElement.prototype.mapChilds = function(array, iterator) {
         array.forEach(iterator.bind(this, this));
     return this;
 }
-BlockElement.prototype.mapNchilds = function(n, iterator) {
+BlockElement.prototype.mapChildsN = function(n, iterator) {
     if (n > 0 && iterator)
     {
         for (let index = 0; index < n; index++)
@@ -139,14 +139,14 @@ BlockElement.prototype.mutate = function(opt) {
     return this;
 }
 BlockElement.prototype.shown = function() {
-    return !this.element.classList.contains("displayNone");
+    return !this.element.classList.contains("displaynone");
 }
 BlockElement.prototype.hide = function() {
-    this.element.classList.add("displayNone");
+    this.element.classList.add("displaynone");
     return this;
 }
 BlockElement.prototype.show = function() {
-    this.element.classList.remove("displayNone");
+    this.element.classList.remove("displaynone");
     return this;
 }
 BlockElement.prototype.toggle = function() {
@@ -242,4 +242,3 @@ var BlockElementExt = function(opt) {
 }
 BlockElementExt.prototype = Object.create(BlockElement.prototype);
 BlockElementExt.prototype.constructor = BlockElementExt;
-
