@@ -149,7 +149,16 @@ BlockElement.prototype.show = function() {
     this.element.classList.remove("displaynone");
     return this;
 }
-BlockElement.prototype.toggle = function() {
+BlockElement.prototype.toggle = function(state) {
+    if (state !== undefined)
+    {
+        if (state)
+            this.show();
+        else
+            this.hide();
+        return this;
+    }
+
     if (this.shown())
         this.hide();
     else
@@ -213,6 +222,10 @@ BlockElement.prototype.destroy = function() {
 }
 BlockElement.prototype.addEvent = function(eventName, command) {
     this.element.addEventListener(eventName, command);
+    return this;
+}
+BlockElement.prototype.removeEvent = function(eventName, command) {
+    this.element.removeEventListener(eventName, command);
     return this;
 }
 BlockElement.prototype.mkChildExt = function(opt) {
