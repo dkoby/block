@@ -7,11 +7,8 @@
  */
 "use strict";
 
-/*
- *
- */
-var BlockElement = function(tag, classList, htmlParentElement, innerHTML, events, blockParent) {
-    this.element = document.createElement(tag ? tag : "div");
+var BlockElement = function(tagName, classList, htmlParentElement, innerHTML, events, blockParent) {
+    this.element = document.createElement(tagName ? tagName : "div");
 
     this.blockParent = blockParent;
 
@@ -29,40 +26,50 @@ var BlockElement = function(tag, classList, htmlParentElement, innerHTML, events
 
     this.mutate(opt);
 }
-BlockElement.prototype.mkChild = function(tag, classList, innerHTML, events) {
+BlockElement.prototype.mkChild = function(tagName, classList, innerHTML, events) {
     if (Object.getPrototypeOf(this).constructor === BlockElementExt)
     {
         return this.mkChildExt({
-            tag: tag,
+            tagName: tagName,
             classList: classList,
             innerHTML: innerHTML,
             events: events,
         });
     } else {
-        return new this.constructor(tag, classList, this.element, innerHTML, events, this);
+        return new this.constructor(tagName, classList, this.element, innerHTML, events, this);
     }
 }
-BlockElement.prototype.mkSibling = function(tag, classList, innerHTML, events) {
-    return this.getParent().mkChild(tag, classList, innerHTML, events);
+BlockElement.prototype.addChild = function(block) {
+    this.element.appendChild(block.element);
+    return this;
+}
+BlockElement.prototype.mkChildOf = function(n, tagName, classList, innerHTML, events) {
+    let blockParent = this;
+    while (--n)
+        blockParent = blockParent.getParent();
+    return blockParent.mkChild(tagName, classList, innerHTML, events);
+}
+BlockElement.prototype.mkSibling = function(tagName, classList, innerHTML, events) {
+    return this.getParent().mkChild(tagName, classList, innerHTML, events);
 }
 BlockElement.prototype.getParent = function(n) {
-    let blockParent;
-
     if (n === undefined)
         return this.blockParent;
 
-    blockParent = this.blockParent;
-    while (--n)
-        blockParent = blockParent.blockParent;
-
+    let blockParent = this;
+    while (n--)
+        blockParent = blockParent.getParent();
     return blockParent;
 }
-BlockElement.prototype.mapChilds = function(array, iterator) {
+BlockElement.prototype.getParentN = function(n) {
+    return this.getParent(n);
+}
+BlockElement.prototype.applyArray = function(array, iterator) {
     if (array && iterator)
         array.forEach(iterator.bind(this, this));
     return this;
 }
-BlockElement.prototype.mapChildsN = function(n, iterator) {
+BlockElement.prototype.applyIndex = function(n, iterator) {
     if (n > 0 && iterator)
     {
         for (let index = 0; index < n; index++)
@@ -77,33 +84,21 @@ BlockElement.prototype.apply = function(apply) {
 BlockElement.prototype.mutate = function(opt) {
     opt = opt || {};
 
-    if (opt.classList)
-    {
-        let classList = []
-        for (let i = 0; i < this.element.classList.length; i++)
-            classList.push(this.element.classList.item(i));
-        classList.forEach((c) => {
-            this.removeClass(c);
-        });
-        opt.classList.forEach((c) => {
-            this.addClass(c);
-        });
-    }
-    if (opt.classListAdd)
-    {
-        opt.classListAdd.forEach((c) => {
-            this.addClass(c);
-        });
-    }
     if (opt.classListRemove)
     {
         opt.classListRemove.forEach((c) => {
-            this.addRemove(c);
+            this.element.classList.remove(c);
+        });
+    }
+    if (opt.classList)
+    {
+        opt.classList.forEach((c) => {
+            this.element.classList.add(c);
         });
     }
 
     if (opt.innerHTML !== undefined && opt.innerHTML !== null)
-        this.setInner(opt.innerHTML);
+        this.innerHTML = opt.innerHTML;
 
     if (opt.attrs)
     {
@@ -119,16 +114,9 @@ BlockElement.prototype.mutate = function(opt) {
     }
     if (opt.events)
     {
-        if (Array.isArray(opt.events))
-        {
-            opt.events[0].forEach((ev) => {
-                this.element.addEventListener(ev, opt.events[1]); 
-            });
-        } else {
-            Object.keys(opt.events).forEach((key) => {
-                this.element.addEventListener(key, opt.events[key]); 
-            });
-        }
+        Object.keys(opt.events).forEach((key) => {
+            this.element.addEventListener(key, opt.events[key]); 
+        });
     }
     if (opt.style)
     {
@@ -136,41 +124,32 @@ BlockElement.prototype.mutate = function(opt) {
             this.element.style[key] = opt.style[key];
         });
     }
+    if (opt.value)
+        this.element.value = value;
     return this;
 }
 BlockElement.prototype.shown = function() {
-    return !this.element.classList.contains("displaynone");
+    return this.element.style["display"] != "none";
 }
-BlockElement.prototype.hide = function() {
-    this.element.classList.add("displaynone");
+BlockElement.prototype.hide = function(visibility) {
+    if (visibility)
+        this.element.style["visibility"] = "hidden";
+    else
+        this.element.style["display"] = "none";
     return this;
 }
-BlockElement.prototype.show = function() {
-    this.element.classList.remove("displaynone");
+BlockElement.prototype.show = function(visibility) {
+    if (visibility)
+        this.element.style["visibility"] = "";
+    else
+        this.element.style["display"] = "";
     return this;
 }
-BlockElement.prototype.toggle = function(state) {
-    if (state !== undefined)
-    {
-        if (state)
-            this.show();
-        else
-            this.hide();
-        return this;
-    }
-
+BlockElement.prototype.toggle = function() {
     if (this.shown())
         this.hide();
     else
         this.show();
-    return this;
-}
-BlockElement.prototype.addClass = function(value) {
-    this.element.classList.add(value);
-    return this;
-}
-BlockElement.prototype.removeClass = function(value) {
-    this.element.classList.remove(value);
     return this;
 }
 BlockElement.prototype.disable = function() {
@@ -181,70 +160,69 @@ BlockElement.prototype.enable = function() {
     this.element.removeAttribute("disabled");
     return this;
 }
-BlockElement.prototype.setInner = function(value, ref) {
-    this.element.innerHTML = value;
+BlockElement.prototype.addClass = function(value) {
+    this.element.classList.add(value);
+    return this;
+}
+BlockElement.prototype.removeClass = function(value) {
+    this.element.classList.remove(value);
+    return this;
 }
 BlockElement.prototype.setValue = function(value, ref) {
     this.element.value = value;
+    return this;
 }
-Object.defineProperty(BlockElement.prototype, "innerHTML", {
-    set: function innerHTML(value) {
-        this.setInner(value);
-    },
-    get: function () {
-        return this.element.innerHTML;
-    },
-});
-Object.defineProperty(BlockElement.prototype, "classList", {
-    get: function () {
-        return this.element.classList;
-    },
-});
-Object.defineProperty(BlockElement.prototype, "value", {
-    set: function value(v) {
-        this.setValue(v);
-    },
-    get: function () {
-        return this.element.value;
-    },
-});
-Object.defineProperty(BlockElement.prototype, "selectedIndex", {
-    set: function innerHTML(value) {
-        this.element.selectedIndex = value;
-    },
-    get: function () {
-        return this.element.selectedIndex;
-    },
-});
+if (true)
+{
+    let controls = [
+        {type: "innerHTML"    , write: true },
+        {type: "value"        , write: true },
+        {type: "classList"    , write: false},
+        {type: "checked"      , write: true },
+        {type: "selected"     , write: true },
+        {type: "style"        , write: false},
+        {type: "selectedIndex", write: true },
+    ]
+    controls.forEach((control) => {
+        let prop = {};
+        prop.get = function() {
+            return this.element[control.type];
+        };
+        if (control.write)
+        {
+            prop.set = function(value) {
+                this.element[control.type] = value;
+            };
+        }
+        Object.defineProperty(BlockElement.prototype, control.type, prop);
+    });
+}
 BlockElement.prototype.destroy = function() {
+    if (this.destroyed)
+        return;
     if (this.htmlParentElement && this.htmlParentElement.contains(this.element))
         this.htmlParentElement.removeChild(this.element);
+
+    this.destroyed = true;
+    return this;
 }
 BlockElement.prototype.addEvent = function(eventName, command) {
     this.element.addEventListener(eventName, command);
     return this;
 }
-BlockElement.prototype.removeEvent = function(eventName, command) {
-    this.element.removeEventListener(eventName, command);
-    return this;
-}
 BlockElement.prototype.mkChildExt = function(opt) {
     opt.htmlParentElement = this.element;
     opt.blockParent = this;
-
     return new BlockElementExt(opt);
 }
 BlockElement.prototype.mkSiblingExt = function(opt) {
     return this.getParent().mkChildExt(opt);
 }
-/*
- *
- */
 var BlockElementExt = function(opt) {
     this.opt = opt;
 
     BlockElement.call(this,
-            opt.tag,
+            opt.tagName,
             opt.classList,
             opt.htmlParentElement,
             opt.innerHTML,
@@ -255,3 +233,4 @@ var BlockElementExt = function(opt) {
 }
 BlockElementExt.prototype = Object.create(BlockElement.prototype);
 BlockElementExt.prototype.constructor = BlockElementExt;
+
