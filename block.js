@@ -125,7 +125,7 @@ BlockElement.prototype.mutate = function(opt) {
         });
     }
     if (opt.value)
-        this.element.value = value;
+        this.element.value = opt.value;
     return this;
 }
 BlockElement.prototype.shown = function() {
