@@ -160,6 +160,9 @@ BlockElement.prototype.enable = function() {
     this.element.removeAttribute("disabled");
     return this;
 }
+BlockElement.prototype.enabled = function() {
+    return !this.element.hasAttribute("disabled");
+}
 BlockElement.prototype.addClass = function(value) {
     this.element.classList.add(value);
     return this;
@@ -182,6 +185,7 @@ if (true)
         {type: "selected"     , write: true },
         {type: "style"        , write: false},
         {type: "selectedIndex", write: true },
+        {type: "options"      , write: false},
     ]
     controls.forEach((control) => {
         let prop = {};
@@ -208,6 +212,17 @@ BlockElement.prototype.destroy = function() {
 }
 BlockElement.prototype.addEvent = function(eventName, command) {
     this.element.addEventListener(eventName, command);
+    return this;
+}
+BlockElement.prototype.addEventExt = function(eventName, command) {
+    this.element.addEventListener(eventName, (ev) => {
+        command(this, ev);
+    });
+    return this;
+}
+
+BlockElement.prototype.removeEvent = function(eventName, command) {
+    this.element.removeEventListener(eventName, command);
     return this;
 }
 BlockElement.prototype.mkChildExt = function(opt) {
